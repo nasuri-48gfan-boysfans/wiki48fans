@@ -46,7 +46,7 @@ Vercel Root Directory must be `frontend`. Railway Root Directory must be `backen
 
 ## Database direction
 
-The first Supabase migration is in `supabase/migrations/0001_foundation.sql`. Run it from **Supabase Dashboard -> SQL Editor** before using database-backed pages. It creates roles, profiles, groups, members, RLS policies, and the registration trigger. Supabase/PostgreSQL will own profiles, roles, memberships, wiki data, community data, and notifications. MongoDB is configured through `server/mongodb.ts` for live sessions, viewer snapshots, statistics, and tracker logs.
+Run `supabase/migrations/0001_foundation.sql` first and then `supabase/migrations/0002_core_schema.sql` from **Supabase Dashboard -> SQL Editor** before using database-backed pages. The second migration adds permissions, user roles, follows, notification preferences, Wiki entries and revisions, discussions, friendships, conversations, messages, channels, notifications, and reports with RLS policies. Supabase/PostgreSQL will own profiles, roles, memberships, wiki data, community data, and notifications. MongoDB is configured through `server/mongodb.ts` for live sessions, viewer snapshots, statistics, and tracker logs.
 
 After starting the API, check `http://localhost:8787/api/health` and `http://localhost:8787/api/health/supabase`.
 

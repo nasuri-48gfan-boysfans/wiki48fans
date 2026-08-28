@@ -1,0 +1,1 @@
+export function Mascot({ compact = false }: { compact?: boolean }) { return <div className={compact ? 'mascot mascot-compact' : 'mascot'} aria-label="48FansWiki bird mascot" role="img"><span className="mascot-wing">⌁</span><span className="mascot-body">●</span><span className="mascot-beak">›</span></div> }

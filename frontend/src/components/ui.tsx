@@ -1,0 +1,6 @@
+import type { ButtonHTMLAttributes, ReactNode } from 'react'
+
+export function Button({ children, variant = 'primary', ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'quiet' | 'outline'; children: ReactNode }) { return <button className={`button button-${variant}`} {...props}>{children}</button> }
+export function Badge({ children, tone = 'neutral' }: { children: ReactNode; tone?: 'neutral' | 'live' | 'accent' }) { return <span className={`badge badge-${tone}`}>{children}</span> }
+export function Avatar({ name, size = 'medium' }: { name: string; size?: 'small' | 'medium' | 'large' }) { const initials = name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase(); return <span className={`avatar avatar-${size}`} aria-label={name}>{initials}</span> }
+export function Window({ title, eyebrow, children, className = '' }: { title: string; eyebrow?: string; children: ReactNode; className?: string }) { return <section className={`window ${className}`}><div className="window-heading"><div>{eyebrow && <span className="eyebrow">{eyebrow}</span>}<h2>{title}</h2></div><span className="window-dots" aria-hidden="true">•••</span></div>{children}</section> }

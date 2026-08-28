@@ -72,6 +72,8 @@ Create a Railway service from this repository and set **Root Directory** to `bac
 - `CLIENT_ORIGIN` with the Vercel URL
 - `PORT` is supplied by Railway automatically; the server supports it
 
+Railway must run Node.js 22 or later. The backend package declares `>=22 <23`, and `NODE_VERSION=22` can be added to Railway Variables if the service does not detect the package engine automatically.
+
 Railway uses `npm run build` and `npm start` from `backend/`.
 
 ### Supabase database and Auth

@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=22 <23"
+  },
   "scripts": {
     "dev": "tsx index.ts",
     "build": "tsc -p tsconfig.server.json --noEmit false --outDir dist-server",

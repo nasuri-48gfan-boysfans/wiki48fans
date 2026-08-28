@@ -11,6 +11,9 @@
     "build": "tsc -p tsconfig.server.json --noEmit false --outDir dist-server",
     "start": "node dist-server/index.js",
     "typecheck": "tsc -p tsconfig.server.json",
+    "test:adapters": "tsx test-live-adapters.ts",
+    "import:members": "tsx importMembers.ts",
+    "test:migration": "node --import tsx --test \"*.test.ts\" ",
     "lint": "oxlint"
   },
   "dependencies": {

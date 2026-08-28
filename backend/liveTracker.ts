@@ -1,67 +1,26 @@
 import { liveDatabase } from './mongodb.js'
+import type { LivePlatformAdapter } from './liveAdapters.js'
 
-export type LivePlatform = 'SHOWROOM' | 'IDN'
+export type LivePlatform = 'showroom' | 'idn'
+export type LiveStatus = 'live' | 'ended'
+export interface PlatformMemberMapping { memberId: string; platformMemberId: string }
+export interface NormalizedLiveSession { memberPlatformId: string; platform: LivePlatform; liveId: string; status: 'live'; title: string; url: string; viewerCount?: number; startedAt?: Date; metadata?: Record<string, unknown> }
+interface StoredLiveSession extends Omit<NormalizedLiveSession, 'status'> { _id?: unknown; memberId: string; status: LiveStatus; endedAt?: Date; createdAt: Date; updatedAt: Date; lastSeenAt: Date }
+interface TrackingPlatformState { success?: boolean; liveDetected: number; responseTimeMs?: number; lastError?: string; checkedAt?: Date }
+interface TrackingState { running: boolean; startedAt?: Date; lastCheck?: Date; platforms: Record<LivePlatform, TrackingPlatformState> }
 
-export interface LiveSession {
-  externalId: string
-  memberId?: string
-  memberName: string
-  groupName?: string
-  platform: LivePlatform
-  url?: string
-  viewerCount?: number
-  startedAt?: Date
-  metadata?: Record<string, unknown>
-}
+const liveSessions = liveDatabase.collection<StoredLiveSession>('live_sessions')
+const viewerSnapshots = liveDatabase.collection<{ sessionId: unknown; memberId: string; platform: LivePlatform; viewerCount: number; recordedAt: Date }>('viewer_snapshots')
+const trackingLogs = liveDatabase.collection<{ platform: LivePlatform; checkedAt: Date; success: boolean; liveDetected: number; responseTimeMs: number; error?: string }>('tracking_logs')
+let trackingState: TrackingState = { running: false, platforms: { showroom: { liveDetected: 0 }, idn: { liveDetected: 0 } } }
 
-interface TrackerSource {
-  platform: LivePlatform
-  endpoint?: string
-  headers?: Record<string, string>
-}
+export async function ensureLiveIndexes() { await liveSessions.createIndex({ memberId: 1, platform: 1, liveId: 1 }, { unique: true }); await liveSessions.createIndex({ status: 1, platform: 1, memberId: 1 }); await viewerSnapshots.createIndex({ sessionId: 1, recordedAt: -1 }); await trackingLogs.createIndex({ platform: 1, checkedAt: -1 }) }
 
-const liveSessions = liveDatabase.collection<LiveSession & { status: 'live' | 'ended'; lastSeenAt: Date }>('live_sessions')
-const trackingLogs = liveDatabase.collection<{ platform: LivePlatform; checkedAt: Date; found: number; error?: string }>('tracking_logs')
+export type NewLiveHook = (session: NormalizedLiveSession & { memberId: string }) => void
+async function processAdapter(adapter: LivePlatformAdapter, mappings: PlatformMemberMapping[], onNewLive?: NewLiveHook) { const started = Date.now(); const checkedAt = new Date(); try { const platformMemberIds = Array.from(new Set(mappings.filter((mapping) => mapping.platformMemberId).map((mapping) => mapping.platformMemberId))); const sessions = await adapter.getLiveSessions(platformMemberIds); const mappingByPlatformId = new Map(mappings.filter((mapping) => mapping.platformMemberId).map((mapping) => [mapping.platformMemberId, mapping.memberId])); const mappedSessions = sessions.filter((session) => mappingByPlatformId.has(session.memberPlatformId)); for (const session of mappedSessions) { const memberId = mappingByPlatformId.get(session.memberPlatformId) as string; const active = await liveSessions.findOne({ memberId, platform: session.platform, liveId: session.liveId, status: 'live' }); if (active) await liveSessions.updateOne({ _id: active._id }, { $set: { ...session, updatedAt: checkedAt, lastSeenAt: checkedAt } }); else { await liveSessions.updateMany({ memberId, platform: session.platform, status: 'live', liveId: { $ne: session.liveId } }, { $set: { status: 'ended', endedAt: checkedAt, updatedAt: checkedAt } }); await liveSessions.updateOne({ memberId, platform: session.platform, liveId: session.liveId }, { $set: { ...session, memberId, status: 'live', updatedAt: checkedAt, lastSeenAt: checkedAt }, $setOnInsert: { createdAt: checkedAt, startedAt: session.startedAt ?? checkedAt } }, { upsert: true }); onNewLive?.({ ...session, memberId }) } if (typeof session.viewerCount === 'number') { const current = await liveSessions.findOne({ memberId, platform: session.platform, liveId: session.liveId, status: 'live' }); if (current) await viewerSnapshots.insertOne({ sessionId: current._id, memberId, platform: session.platform, viewerCount: session.viewerCount, recordedAt: checkedAt }) } } const responseTimeMs = Date.now() - started; trackingState.platforms[adapter.platform] = { success: true, liveDetected: mappedSessions.length, responseTimeMs, checkedAt }; await trackingLogs.insertOne({ platform: adapter.platform, checkedAt, success: true, liveDetected: mappedSessions.length, responseTimeMs }) } catch (error) { const message = error instanceof Error ? error.message : String(error); const responseTimeMs = Date.now() - started; trackingState.platforms[adapter.platform] = { success: false, liveDetected: 0, responseTimeMs, checkedAt, lastError: message }; await trackingLogs.insertOne({ platform: adapter.platform, checkedAt, success: false, liveDetected: 0, responseTimeMs, error: message }); console.error(`[tracker] ${adapter.platform}: ${message}`) } }
 
-async function fetchSource(source: TrackerSource): Promise<LiveSession[]> {
-  if (!source.endpoint) return []
-  const response = await fetch(source.endpoint, { headers: source.headers })
-  if (!response.ok) throw new Error(`${source.platform} returned HTTP ${response.status}`)
-  const payload: unknown = await response.json()
-  if (!Array.isArray(payload)) throw new Error(`${source.platform} response must be a JSON array of live sessions`)
-  return payload.map((item) => normalizeSession(item, source.platform))
-}
-
-function normalizeSession(value: unknown, platform: LivePlatform): LiveSession {
-  if (!value || typeof value !== 'object') throw new Error(`${platform} returned an invalid session item`)
-  const item = value as Record<string, unknown>
-  const externalId = String(item.externalId ?? item.id ?? '')
-  const memberName = String(item.memberName ?? item.name ?? '')
-  if (!externalId || !memberName) throw new Error(`${platform} session is missing id or memberName`)
-  return { externalId, memberId: typeof item.memberId === 'string' ? item.memberId : undefined, memberName, groupName: typeof item.groupName === 'string' ? item.groupName : undefined, platform, url: typeof item.url === 'string' ? item.url : undefined, viewerCount: typeof item.viewerCount === 'number' ? item.viewerCount : undefined, startedAt: typeof item.startedAt === 'string' ? new Date(item.startedAt) : undefined, metadata: item }
-}
-
-export async function trackLiveSources(sources: TrackerSource[]) {
-  for (const source of sources) {
-    const checkedAt = new Date()
-    try {
-      const sessions = await fetchSource(source)
-      await Promise.all(sessions.map((session) => liveSessions.updateOne({ externalId: session.externalId, platform: session.platform }, { $set: { ...session, status: 'live', lastSeenAt: checkedAt }, $setOnInsert: { startedAt: session.startedAt ?? checkedAt } }, { upsert: true })))
-      await liveSessions.updateMany({ platform: source.platform, status: 'live', lastSeenAt: { $lt: checkedAt } }, { $set: { status: 'ended', endedAt: checkedAt } })
-      await trackingLogs.insertOne({ platform: source.platform, checkedAt, found: sessions.length })
-      console.log(`[tracker] ${source.platform}: ${sessions.length} live session(s)`)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      await trackingLogs.insertOne({ platform: source.platform, checkedAt, found: 0, error: message })
-      console.error(`[tracker] ${source.platform}: ${message}`)
-    }
-  }
-}
-
-export async function getLiveSessions() { return liveSessions.find({ status: 'live' }).sort({ viewerCount: -1, startedAt: 1 }).toArray() }
-
-export function startLiveTracker(sources: TrackerSource[], intervalMs: number) {
-  const run = () => void trackLiveSources(sources)
-  run()
-  return setInterval(run, intervalMs)
-}
+export async function runTrackerCycle(adapters: LivePlatformAdapter[], mappings: PlatformMemberMapping[], onNewLive?: NewLiveHook) { trackingState.lastCheck = new Date(); await Promise.all(adapters.map((adapter) => processAdapter(adapter, mappings, onNewLive))) }
+export async function getLiveSessions(filters: { platform?: LivePlatform; memberId?: string } = {}) { const query = { status: 'live' as const, ...(filters.platform ? { platform: filters.platform } : {}), ...(filters.memberId ? { memberId: filters.memberId } : {}) }; return liveSessions.find(query).sort({ viewerCount: -1, startedAt: 1 }).toArray() }
+export async function getTrackerStatus() { const activeLiveSessions = await liveSessions.countDocuments({ status: 'live' }); return { ...trackingState, activeLiveSessions } }
+export function startLiveTracker(adapters: LivePlatformAdapter[], mappings: PlatformMemberMapping[], intervalMs: number, onNewLive?: NewLiveHook) { trackingState.running = true; trackingState.startedAt = new Date(); const run = () => void runTrackerCycle(adapters, mappings, onNewLive); run(); return setInterval(run, intervalMs) }
+export function stopLiveTracker() { trackingState.running = false }

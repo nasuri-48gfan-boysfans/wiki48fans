@@ -13,6 +13,10 @@ const envSchema = z.object({
   LIVE_TRACKER_INTERVAL_MS: z.coerce.number().int().positive().default(60000),
   SHOWROOM_TRACKER_URL: z.string().url().optional(),
   IDN_TRACKER_URL: z.string().url().optional(),
+  TRACKER_TIMEOUT_MS: z.coerce.number().int().positive().default(10000),
+  VIEWER_SNAPSHOT_INTERVAL_MS: z.coerce.number().int().positive().default(60000),
+  JKT48_CONNECT_API_KEY: z.string().optional(),
+  JKT48_48PEDIA_API_KEY: z.string().optional(),
 })
 
 export const env = envSchema.parse({
@@ -24,4 +28,8 @@ export const env = envSchema.parse({
   LIVE_TRACKER_INTERVAL_MS: process.env.LIVE_TRACKER_INTERVAL_MS,
   SHOWROOM_TRACKER_URL: process.env.SHOWROOM_TRACKER_URL,
   IDN_TRACKER_URL: process.env.IDN_TRACKER_URL,
+  TRACKER_TIMEOUT_MS: process.env.TRACKER_TIMEOUT_MS,
+  VIEWER_SNAPSHOT_INTERVAL_MS: process.env.VIEWER_SNAPSHOT_INTERVAL_MS,
+  JKT48_CONNECT_API_KEY: process.env.JKT48_CONNECT_API_KEY,
+  JKT48_48PEDIA_API_KEY: process.env.JKT48_48PEDIA_API_KEY,
 })

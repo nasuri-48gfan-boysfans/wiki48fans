@@ -61,6 +61,12 @@ export default function MembersPage({ profile }: { profile: Profile }) {
     })
   }, [members, query, groupId])
 
+  const teamCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const member of members ?? []) counts[member.groupId] = (counts[member.groupId] ?? 0) + 1
+    return counts
+  }, [members])
+
   const loading = groupsLoading || membersLoading
 
   const toggle = (id: string) => setSelected((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]))
@@ -86,12 +92,29 @@ export default function MembersPage({ profile }: { profile: Profile }) {
         <input aria-label="Cari member" placeholder="Cari nama atau nickname..." value={query} onChange={(event) => setQuery(event.target.value)} />
       </div>
 
-      <div className="filter-row">
-        <span className="filter-label">Filter:</span>
-        <select className="group-filter" aria-label="Filter grup" value={groupId} onChange={(event) => setGroupId(event.target.value)}>
-          <option value="all">Semua grup</option>
-          {(groups ?? []).map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}
-        </select>
+      <div className="team-chips" role="group" aria-label="Filter berdasarkan team">
+        <button type="button" className={`team-chip ${groupId === 'all' ? 'active' : ''}`} onClick={() => setGroupId('all')}>
+          <span className="team-dot" />
+          Semua
+          <span className="team-chip-count">{(members ?? []).length}</span>
+        </button>
+        {(groups ?? []).map((group) => {
+          const color = group.primaryColor || '#e86f61'
+          const count = teamCounts[group.id] ?? 0
+          return (
+            <button
+              key={group.id}
+              type="button"
+              className={`team-chip ${groupId === group.id ? 'active' : ''}`}
+              style={{ '--team-color': color } as CSSProperties}
+              onClick={() => setGroupId(group.id)}
+            >
+              <span className="team-dot" />
+              {group.name}
+              <span className="team-chip-count">{count}</span>
+            </button>
+          )
+        })}
       </div>
 
       {saveError && <p className="form-error" role="alert">{saveError}</p>}

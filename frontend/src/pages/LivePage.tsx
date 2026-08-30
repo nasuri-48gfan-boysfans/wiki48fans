@@ -3,7 +3,7 @@ import { fetchGroups } from '../lib/api/groups'
 import { fetchMembers } from '../lib/api/members'
 import { fetchLiveSessions } from '../lib/api/live'
 import { useAsync } from '../lib/api/useAsync'
-import { Badge, Button, EmptyState, Skeleton, Window } from '../components/ui'
+import { Badge, Button, EmptyState, MascotLoader, Window } from '../components/ui'
 import type { Profile } from '../types/auth'
 import type { LiveSession } from '../lib/api/types'
 
@@ -74,7 +74,7 @@ export default function LivePage({ profile }: { profile: Profile }) {
       {error && <div className="error-banner" role="alert"><strong>{error}</strong></div>}
 
       {loading ? (
-        <div className="live-sections"><Window title="Live"><Skeleton lines={3} /></Window></div>
+        <div className="live-sections"><Window title="Live"><MascotLoader label="Memeriksa live..." /></Window></div>
       ) : sessions.length === 0 ? (
         <Window title="Live" eyebrow="SHOWROOM & IDN"><EmptyState title="Tidak ada sesi live saat ini." hint="Tidak ada tayangan live palsu — data diambil dari tracker backend." /></Window>
       ) : (

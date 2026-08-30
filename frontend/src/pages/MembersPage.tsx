@@ -13,7 +13,7 @@ function MemberCard({
   onToggle,
   onOpen,
 }: {
-  member: { id: string; name: string; nickname?: string; photoUrl?: string; groupName: string; primaryColor: string }
+  member: { id: string; name: string; nickname?: string; photoUrl?: string; groupName: string; primaryColor: string; generation?: number }
   selected: boolean
   onToggle: (id: string) => void
   onOpen: (id: string) => void
@@ -30,7 +30,9 @@ function MemberCard({
     >
       <div className="member-card-media"><PhotoAvatar name={member.name} src={member.photoUrl} size="large" /></div>
       <strong>{displayName}</strong>
-      <small>{member.groupName}</small>
+      {member.nickname && member.nickname !== member.name && <small className="member-nick">“{member.name}”</small>}
+      {member.generation ? <span className="member-gen">Gen {member.generation}</span> : null}
+      <small className="member-group-label">{member.groupName}</small>
       {selected && <span className="member-card-check">✓</span>}
       <span className="member-card-add" role="button" aria-label={selected ? 'Hapus dari Oshi' : 'Jadikan Oshi'} onClick={(event) => { event.stopPropagation(); onToggle(member.id) }}>
         {selected ? '★' : '+'}

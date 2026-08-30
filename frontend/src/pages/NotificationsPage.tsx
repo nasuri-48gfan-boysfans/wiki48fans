@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { fetchNotifications, markNotificationsRead } from '../lib/api/notifications'
 import { useAsync } from '../lib/api/useAsync'
-import { Button, EmptyState, Skeleton, Window } from '../components/ui'
+import { Button, EmptyState, MascotLoader, Window } from '../components/ui'
 
 function timeAgo(iso: string): string {
   const date = new Date(iso)
@@ -34,7 +34,7 @@ export default function NotificationsPage() {
       {error ? (
         <div className="error-banner" role="alert"><strong>Notifikasi gagal dimuat.</strong><div><Button variant="outline" onClick={reload}>Coba lagi</Button></div></div>
       ) : loading ? (
-        <Window title="Today"><Skeleton lines={3} /></Window>
+        <Window title="Today"><MascotLoader label="Memuat notifikasi..." /></Window>
       ) : (notifications ?? []).length === 0 ? (
         <Window title="Today" eyebrow="Notifications"><EmptyState title="Belum ada notifikasi." hint="Notifikasi hanya muncul dari kejadian nyata di aplikasi." /></Window>
       ) : (

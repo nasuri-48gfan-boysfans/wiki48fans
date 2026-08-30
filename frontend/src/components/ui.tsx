@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import { Mascot } from './Mascot'
 
 export function Button({ children, variant = 'primary', ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'quiet' | 'outline'; children: ReactNode }) { return <button className={`button button-${variant}`} {...props}>{children}</button> }
 export function Badge({ children, tone = 'neutral' }: { children: ReactNode; tone?: 'neutral' | 'live' | 'accent' }) { return <span className={`badge badge-${tone}`}>{children}</span> }
@@ -14,9 +15,31 @@ export function Window({ title, eyebrow, children, className = '' }: { title: st
 export function EmptyState({ title, hint }: { title: string; hint?: string }) {
   return (
     <div className="placeholder">
-      <span aria-hidden="true">✦</span>
+      <Mascot compact />
       <p>{title}</p>
       {hint && <small className="empty-hint">{hint}</small>}
+    </div>
+  )
+}
+
+/** Loading state — the mascot bobs gently while a section/screen loads. */
+export function MascotLoader({ label = 'Loading...' }: { label?: string }) {
+  return (
+    <div className="placeholder mascot-loader">
+      <Mascot compact />
+      <p>{label}</p>
+    </div>
+  )
+}
+
+/** Consistent friendly error state (never shows a raw stack trace). */
+export function ErrorState({ title, hint, onRetry }: { title: string; hint?: string; onRetry?: () => void }) {
+  return (
+    <div className="placeholder">
+      <Mascot compact />
+      <p>{title}</p>
+      {hint && <small className="empty-hint">{hint}</small>}
+      {onRetry && <Button variant="outline" onClick={onRetry}>Coba lagi</Button>}
     </div>
   )
 }

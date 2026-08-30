@@ -29,3 +29,79 @@ body{background-color:#f7f5f0;background-image:radial-gradient(circle at 82% 8%,
 .form-success{color:#2e7d46;font-size:14px;margin:6px 0 0}.profile-oshi{display:grid;gap:10px}.profile-oshi-row{display:flex;align-items:center;gap:12px;padding:8px;border-radius:10px;text-decoration:none;color:inherit}.profile-oshi-row:hover{background:var(--lineOverlay,rgba(120,120,120,.08))}.profile-oshi-row>span:nth-child(2){flex:1;display:flex;flex-direction:column}.profile-oshi-row small{color:var(--muted,#888)}
 @keyframes skeleton{0%{background-position:200% 0}100%{background-position:-200% 0}}
 @media(max-width:800px){.member-detail-top{grid-template-columns:1fr}.member-meta-list{grid-template-columns:1fr}.member-photo{max-width:220px;margin:0 auto}}
+
+/* ============================================================
+   48FansWiki visual identity — bright · modern · clean · playful
+   ============================================================ */
+
+/* Mascot refresh — feather accents + blink, keeps light bob */
+.mascot{transition:transform .35s ease}
+.mascot:hover{transform:translateY(-3px) rotate(-3deg)}
+.mascot-feather{position:absolute;width:14px;height:9px;border-radius:50% 50% 0 50%;background:#f4c95d;opacity:.6}
+.mascot-feather-one{left:0;top:8px;transform:rotate(-18deg)}
+.mascot-feather-two{left:2px;bottom:8px;transform:rotate(24deg) scaleX(-1)}
+.mascot-eye{position:absolute;top:14px;right:12px;width:6px;height:6px;border-radius:50%;background:#4a3b2e;animation:mascot-blink 4.6s ease-in-out infinite}
+@keyframes mascot-blink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+
+/* Brand nav icon */
+.nav-icon svg{display:block;margin:0 auto}
+.nav-notification{display:inline-flex;align-items:center;justify-content:center}
+
+/* Home — welcome + discovery polish */
+.welcome-copy{max-width:520px}
+.welcome-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
+.button-ghost{color:var(--coral);background:#fff;border:1px solid rgba(232,111,97,.28)}
+.button-ghost:hover{background:#fff6f4;transform:translateY(-1px)}
+.discover-window .text-link,.live-window .text-link{position:absolute;right:24px;top:31px}
+.ooshi-edit-link{display:inline-block;margin-top:14px}
+.oshi-now-list{display:grid;gap:4px}
+.member-count-strip{display:flex;gap:12px;flex-wrap:wrap}
+.stat-chip{flex:1;min-width:90px;padding:16px;text-align:center;background:#fff8f5;border:1px solid rgba(232,111,97,.18);border-radius:14px}
+.stat-chip strong{display:block;font-size:26px;color:var(--coral);line-height:1}
+.stat-chip small{color:var(--muted);font-size:10px;margin-top:6px;display:block}
+.community-teaser{color:var(--muted);font-size:13px;line-height:1.6;margin-bottom:14px}
+.community-chips{display:flex;gap:10px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:999px;font-size:12px;font-weight:600;transition:.2s}
+.chip:hover{border-color:var(--coral);color:var(--coral);transform:translateY(-1px);box-shadow:0 6px 16px rgba(232,111,97,.12)}
+.chip svg{flex:none}
+
+/* Member card — generation + nicer edges */
+.member-card{border-radius:16px}
+.member-card .member-nick{margin-top:1px}
+.member-gen{font-size:9px;font-weight:700;color:#fff;background:var(--group-color);padding:2px 8px;border-radius:999px;margin-top:4px}
+.member-group-label{color:var(--muted);font-size:10px;margin-top:2px}
+.member-card .avatar,.member-card-media .avatar{width:64px;height:64px;border-radius:50%;box-shadow:0 4px 14px color-mix(in srgb,var(--group-color) 22%,transparent)}
+
+/* Group page */
+.group-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;margin-top:30px}
+.group-card{position:relative;padding:22px;background:var(--paper);border:1px solid var(--line);border-radius:18px;display:flex;flex-direction:column;gap:6px;transition:.22s;overflow:hidden}
+.group-card:before{content:'';position:absolute;inset:0 0 auto 0;height:5px;background:var(--group-color,var(--coral))}
+.group-card:hover{transform:translateY(-3px);box-shadow:0 16px 34px color-mix(in srgb,var(--group-color) 20%,transparent)}
+.group-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.group-logo{width:54px;height:54px;border-radius:14px;object-fit:cover;background:#f4f1ea;border:1px solid var(--line)}
+.group-logo-fallback{display:grid;place-items:center;color:#fff;background:var(--group-color,var(--coral));font-weight:700;font-size:18px}
+.group-live-count{color:var(--muted);font-size:11px;font-weight:700;background:#f4f1ea;padding:4px 9px;border-radius:999px}
+.group-card h3{margin:0;font-size:20px;letter-spacing:-.4px}
+.group-country{color:var(--muted);font-size:11px}
+.group-desc{color:#6b665e;font-size:12px;line-height:1.55;flex:1}
+.group-link{color:var(--coral);font-size:11px;font-weight:700;width:fit-content}
+.group-browse{margin-top:10px;text-align:center;padding:11px;border:1px solid color-mix(in srgb,var(--group-color) 40%,var(--line));border-radius:11px;color:var(--group-color,var(--coral));font-size:12px;font-weight:700;transition:.2s}
+.group-browse:hover{background:color-mix(in srgb,var(--group-color) 10%,transparent)}
+
+/* Empty / loader / error with mascot */
+.placeholder{gap:12px}
+.placeholder .mascot{margin:0;transform:scale(.9)}
+.mascot-loader p{color:var(--muted)}
+
+/* Card radius + shadow refresh for community feel */
+.window,.member-card,.wiki-entry,.channel-card,.live-card,.room-card,.profile-hero{border-radius:16px}
+.window{box-shadow:0 12px 30px rgba(73,61,48,.05)}
+
+@media(max-width:800px){
+  .group-grid{grid-template-columns:1fr}
+  .welcome-copy h2{font-size:26px}
+  .stat-chip{min-width:72px}
+  .member-count-strip{gap:8px}
+  .community-chips{gap:8px}
+  .member-card .avatar,.member-card-media .avatar{width:56px;height:56px}
+}

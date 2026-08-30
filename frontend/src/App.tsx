@@ -9,6 +9,7 @@ import type { AuthSession, Profile } from './types/auth'
 
 import HomePage from './pages/HomePage'
 import MembersPage from './pages/MembersPage'
+import GroupsPage from './pages/GroupsPage'
 import MemberDetailPage from './pages/MemberDetailPage'
 import LivePage from './pages/LivePage'
 import NotificationsPage from './pages/NotificationsPage'
@@ -195,6 +196,7 @@ function ProtectedLayout({ profile, onSignOut, onProfileUpdated }: { profile: Pr
           <Route path="/" element={<HomePage profile={profile} />} />
           <Route path="/wiki" element={<WikiPage />} />
           <Route path="/members" element={<MembersPage profile={profile} />} />
+          <Route path="/groups" element={<GroupsPage />} />
           <Route path="/members/:id" element={<MemberDetailRoute />} />
           <Route path="/live" element={<LivePage profile={profile} />} />
           <Route path="/profile" element={<ProfilePage profile={profile} />} />

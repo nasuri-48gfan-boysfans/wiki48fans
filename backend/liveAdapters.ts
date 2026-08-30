@@ -6,13 +6,6 @@ export interface LivePlatformAdapter {
   getMemberLiveStatus(mapping: PlatformMemberMapping): Promise<NormalizedLiveSession | null>
 }
 
-interface ShowroomRoom {
-  id: number
-  name: string
-  url_key: string
-  is_live: boolean
-}
-
 interface ShowroomOnlive {
   room_id: number
   room_url_key: string
@@ -38,23 +31,27 @@ function showroomUrl(roomKey: string) { return `https://www.showroom-live.com/r/
 export class ShowroomAdapter implements LivePlatformAdapter {
   readonly platform = 'showroom' as const
   constructor(private readonly timeoutMs = 10000) {}
-  async getLiveSessions() {
-    const [rooms, onlives] = await Promise.all([
-      requestJson<ShowroomRoom[]>('https://campaign.showroom-live.com/akb48_sr/data/room_status_list.json', this.timeoutMs),
-      requestJson<{ onlives?: Array<{ lives?: ShowroomOnlive[] }> }>('https://www.showroom-live.com/api/live/onlives', this.timeoutMs),
-    ])
-    const mappedRooms = new Map(rooms.map((room) => [String(room.id), room]))
-    return (onlives.onlives || []).flatMap((genre) => genre.lives || []).filter((live) => mappedRooms.has(String(live.room_id))).map((live) => this.normalize(live, mappedRooms.get(String(live.room_id))))
+  async getLiveSessions(platformMemberIds?: string[]) {
+    const wanted = new Set((platformMemberIds || []).filter((id) => id && id.length > 0))
+    const onlives = await requestJson<{ onlives?: Array<{ lives?: ShowroomOnlive[] }> }>('https://www.showroom-live.com/api/live/onlives', this.timeoutMs)
+    return (onlives.onlives || [])
+      .flatMap((genre) => genre.lives || [])
+      // Restrict to the members we actually track (their SHOWROOM room ids).
+      // We no longer filter by an AKB-only room-status whitelist because that
+      // list excludes JKT48 rooms, which would hide JKT48 lives entirely.
+      .filter((live) => live.room_id && wanted.has(String(live.room_id)))
+      .map((live) => this.normalize(live))
   }
   async getMemberLiveStatus(mapping: PlatformMemberMapping) {
-    const sessions = await this.getLiveSessions()
+    if (!mapping.platformMemberId) return null
+    const sessions = await this.getLiveSessions([mapping.platformMemberId])
     return sessions.find((session) => session.memberPlatformId === mapping.platformMemberId) || null
   }
-  private normalize(live: ShowroomOnlive, room?: ShowroomRoom): NormalizedLiveSession {
+  private normalize(live: ShowroomOnlive): NormalizedLiveSession {
     if (!live.room_id || !live.live_id || typeof live.started_at !== 'number') throw new Error('SHOWROOM live payload is missing room_id, live_id, or started_at')
-    const roomKey = live.room_url_key || room?.url_key
+    const roomKey = live.room_url_key
     if (!roomKey) throw new Error(`SHOWROOM live ${live.live_id} is missing room_url_key`)
-    return { memberPlatformId: String(live.room_id), platform: this.platform, liveId: String(live.live_id), status: 'live', title: live.telop || room?.name || 'SHOWROOM live', url: showroomUrl(roomKey), viewerCount: typeof live.view_num === 'number' ? live.view_num : undefined, startedAt: new Date(live.started_at * 1000), metadata: { roomId: live.room_id, roomUrlKey: roomKey, streamingUrlList: live.streaming_url_list } }
+    return { memberPlatformId: String(live.room_id), platform: this.platform, liveId: String(live.live_id), status: 'live', title: live.telop || 'SHOWROOM live', url: showroomUrl(roomKey), viewerCount: typeof live.view_num === 'number' ? live.view_num : undefined, startedAt: new Date(live.started_at * 1000), metadata: { roomId: live.room_id, roomUrlKey: roomKey, streamingUrlList: live.streaming_url_list } }
   }
 }
 

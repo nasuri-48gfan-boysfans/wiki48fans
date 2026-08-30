@@ -186,7 +186,9 @@ test('normalizeJkt48Connect maps community member incl. live-tracking ids', () =
   assert.equal(member.sourceIdentifier, 'FREYA_JAYAWARDANA')
   assert.equal(member.generation, 8)
   assert.equal(member.status, 'active')
-  assert.equal(member.showroomRoomId, '1234')
+  // JKT48Connect's room_id is an internal id, NOT an official SHOWROOM id, so
+  // it must not be emitted as showroomRoomId (official ids come from applyShowroomRooms.ts).
+  assert.equal(member.showroomRoomId, undefined)
   assert.equal(member.idnUserId, 'f001ba66-3c51-4849-9afa-13cf74eb1571')
   assert.equal(member.source, 'jkt48connect')
 })
@@ -194,13 +196,14 @@ test('normalizeJkt48Connect maps community member incl. live-tracking ids', () =
 test('normalizeJkt48Connect marks graduated and leaves no provider ids when absent', () => {
   const member = normalizeJkt48Connect({ _id: 'OLD_MEMBER', name: 'Old Member', room_id: 999, is_graduate: true, socials: [] })
   assert.equal(member.status, 'graduated')
-  assert.equal(member.showroomRoomId, '999')
+  assert.equal(member.showroomRoomId, undefined)
   assert.equal(member.idnUserId, undefined)
 })
 
-test('normalizeJkt48Connect keeps showroom id, drops bad generations, and omits idn without a profile', () => {
+test('normalizeJkt48Connect drops bad generations and omits idn without a profile', () => {
   const member = normalizeJkt48Connect({ _id: 'MIKAELA_KUSJANTO', name: 'Mikaela Kusjanto', room_id: 782345, generation: 'unknown-gen', socials: [{ title: 'SHOWROOM', url: 'https://www.showroom-live.com/JKT48_Mikaela' }] })
-  assert.equal(member.showroomRoomId, '782345')
+  // Connect room_id is internal and must not leak into the official SHOWROOM id.
+  assert.equal(member.showroomRoomId, undefined)
   assert.equal(member.generation, undefined)
   assert.equal(member.idnUserId, undefined)
 })
@@ -248,6 +251,27 @@ test('enrichOnly updates provider ids on existing members without clobbering cat
   assert.equal(inserted.showroom_room_id, '123')
   assert.equal(inserted.idn_user_id, 'idn-uuid-2')
   assert.equal(inserted.name, 'New Member')
+})
+
+test('enrichOnly never NULLs out an existing showroom id when the source omits it', async () => {
+  // Existing member already carries an authoritative official showroom id
+  // (as applied by applyShowroomRooms.ts).
+  const existing = [record({ sourceIdentifier: 'FREYA_JAYAWARDANA', name: 'Freya', showroomRoomId: '318225' })]
+  const { store, rows } = fakeStore(existing)
+  const adapter: SourceAdapter = {
+    groupSlug: 'jkt48',
+    enrichOnly: true,
+    async fetchList() {
+      // Thinner source (e.g. JKT48Connect) provides idn only, no showroom id.
+      return [record({ sourceIdentifier: 'FREYA_JAYAWARDANA', name: 'Freya', idnUserId: 'idn-uuid-1' })]
+    },
+  }
+  const report = await importMembers(adapter, { store })
+  assert.equal(report.errors.length, 0)
+  const enriched = rows.find((row) => row.source_identifier === 'FREYA_JAYAWARDANA')!
+  // showroom id must be preserved, not overwritten with NULL.
+  assert.equal(enriched.showroom_room_id, '318225')
+  assert.equal(enriched.idn_user_id, 'idn-uuid-1')
 })
 
 test('normalize48pedia maps the MemberDetail schema and keeps provenance', () => {

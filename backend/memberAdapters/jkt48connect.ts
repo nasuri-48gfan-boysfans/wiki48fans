@@ -75,7 +75,10 @@ export function normalizeJkt48Connect(raw: Jkt48ConnectMember): MemberRecord {
     source: SOURCE,
     sourceUrl: MEMBERS_ENDPOINT,
     idnUserId: idnUserIdFromSocials(raw.socials),
-    showroomRoomId: raw.room_id != null && Number(raw.room_id) > 0 ? String(raw.room_id) : undefined,
+    // Intentionally omit showroomRoomId: JKT48Connect's room ids are its own
+    // internal ids and DO NOT match SHOWROOM's live room ids, so using them here
+    // would clobber the official ids applied by applyShowroomRooms.ts. Official
+    // SHOWROOM room ids come exclusively from that authoritative source.
   }
 }
 

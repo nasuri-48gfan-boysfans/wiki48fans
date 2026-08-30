@@ -187,8 +187,15 @@ async function upsertRecord(
     // last_verified_at is refresh metadata, not content; it alone is not an update.
     if (key === 'last_verified_at') continue
     // Enrichment never overwrites existing columns with the thinner source's
-    // NULLs; it only updates the live-tracking ids and the active flag.
-    if (enrichOnly && !(key === 'showroom_room_id' || key === 'idn_user_id' || key === 'is_active')) continue
+    // NULLs; it only updates the live-tracking ids and the active flag. The
+    // showroom id is only enriched when the incoming source actually provides
+    // one, so a thinner source (e.g. JKT48Connect, whose room ids are its own
+    // internal ids) can never NULL-out the authoritative official ids applied
+    // by applyShowroomRooms.ts.
+    if (enrichOnly) {
+      if (key !== 'showroom_room_id' && key !== 'idn_user_id' && key !== 'is_active') continue
+      if (key === 'showroom_room_id' && !comparable(target[key])) continue
+    }
     if (comparable(current[key]) !== comparable(target[key])) changed[key] = target[key]
   }
   if (Object.keys(changed).length === 0) { report.unchanged += 1; return }

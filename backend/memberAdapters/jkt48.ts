@@ -81,6 +81,7 @@ export function normalizeJkt48(raw: Jkt48RawMember, source: string): MemberRecor
       name: raw.full_name,
       nickname: raw.nickname || undefined,
       generation: parseGeneration(raw.generation_name),
+      team: raw.team_name || undefined,
       birthDate: parseDate(raw.birthday),
       birthPlace: raw.birth_place || undefined,
       heightCm: parseHeight(raw.height),

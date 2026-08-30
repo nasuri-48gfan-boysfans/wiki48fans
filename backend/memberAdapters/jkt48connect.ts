@@ -69,6 +69,7 @@ export function normalizeJkt48Connect(raw: Jkt48ConnectMember): MemberRecord {
     name,
     nickname: raw.nicknames && raw.nicknames[0] ? raw.nicknames[0] : undefined,
     generation: toPositiveInt(raw.generation),
+    team: raw.team || undefined,
     status: raw.is_graduate ? 'graduated' : 'active',
     profileImageUrl: raw.img || undefined,
     sourceIdentifier: identifier,

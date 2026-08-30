@@ -103,6 +103,7 @@ export function toMemberPayload(groupId: string, record: MemberRecord): Record<s
     slug: record.slug,
     nickname: record.nickname ?? null,
     generation: record.generation ?? null,
+    team: record.team ?? null,
     birth_date: record.birthDate ?? null,
     birth_place: record.birthPlace ?? null,
     height_cm: record.heightCm ?? null,

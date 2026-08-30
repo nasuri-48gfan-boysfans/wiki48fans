@@ -97,6 +97,7 @@ export function normalize48pediaList(item: FortyEightPediaMemberListItem, page: 
     name: item.name,
     nickname: item.nickname || undefined,
     generation: parseGeneration(item.generation_code),
+    team: item.team_code || undefined,
     status: 'active', // corrected to graduated by the detail fetch if applicable
     profileImageUrl: item.photo || undefined,
     officialProfileUrl: undefined,
@@ -116,6 +117,7 @@ export function normalize48pedia(detail: FortyEightPediaMemberDetail): MemberRec
     name: detail.name,
     nickname: detail.nickname || undefined,
     generation: parseGeneration(detail.generation_code),
+    team: detail.team_code || undefined,
     birthDate: toDate(detail.birth_date),
     birthPlace: detail.birth_place || undefined,
     heightCm: detail.height_cm ?? undefined,

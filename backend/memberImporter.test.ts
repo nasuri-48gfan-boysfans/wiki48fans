@@ -186,6 +186,7 @@ test('normalizeJkt48Connect maps community member incl. live-tracking ids', () =
   assert.equal(member.sourceIdentifier, 'FREYA_JAYAWARDANA')
   assert.equal(member.generation, 8)
   assert.equal(member.status, 'active')
+  assert.equal(member.team, 'KIII')
   // JKT48Connect's room_id is an internal id, NOT an official SHOWROOM id, so
   // it must not be emitted as showroomRoomId (official ids come from applyShowroomRooms.ts).
   assert.equal(member.showroomRoomId, undefined)

@@ -21,6 +21,8 @@ export interface FrontendMember {
   photoUrl?: string
   bio?: string
   generation?: number
+  /** Team within the group, e.g. 'KIII', 'J', 'T' for JKT48. */
+  team?: string
   status: MemberStatus
   isActive: boolean
   birthDate?: string

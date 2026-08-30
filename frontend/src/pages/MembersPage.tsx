@@ -13,7 +13,7 @@ function MemberCard({
   onToggle,
   onOpen,
 }: {
-  member: { id: string; name: string; nickname?: string; photoUrl?: string; groupName: string; primaryColor: string; generation?: number }
+  member: { id: string; name: string; nickname?: string; photoUrl?: string; groupName: string; primaryColor: string; generation?: number; team?: string }
   selected: boolean
   onToggle: (id: string) => void
   onOpen: (id: string) => void
@@ -32,7 +32,7 @@ function MemberCard({
       <strong>{displayName}</strong>
       {member.nickname && member.nickname !== member.name && <small className="member-nick">“{member.name}”</small>}
       {member.generation ? <span className="member-gen">Gen {member.generation}</span> : null}
-      <small className="member-group-label">{member.groupName}</small>
+      <small className="member-group-label">{member.team ? `Team ${member.team} · ${member.groupName}` : member.groupName}</small>
       {selected && <span className="member-card-check">✓</span>}
       <span className="member-card-add" role="button" aria-label={selected ? 'Hapus dari Oshi' : 'Jadikan Oshi'} onClick={(event) => { event.stopPropagation(); onToggle(member.id) }}>
         {selected ? '★' : '+'}
@@ -46,6 +46,7 @@ export default function MembersPage({ profile }: { profile: Profile }) {
   const { data: members, loading: membersLoading, error, reload } = useAsync(() => fetchMembers(groups ?? []), [groups])
   const [query, setQuery] = useState('')
   const [groupId, setGroupId] = useState<string>('all')
+  const [teamId, setTeamId] = useState<string>('all')
   const [selected, setSelected] = useState<string[]>(profile.oshiIds)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -56,16 +57,41 @@ export default function MembersPage({ profile }: { profile: Profile }) {
     const q = query.trim().toLowerCase()
     return members.filter((member) => {
       const matchGroup = groupId === 'all' || member.groupId === groupId
+      const matchTeam = teamId === 'all' || (member.team ?? '') === teamId
       const matchQuery = !q || member.name.toLowerCase().includes(q) || (member.nickname?.toLowerCase().includes(q) ?? false)
-      return matchGroup && matchQuery
+      return matchGroup && matchTeam && matchQuery
     })
-  }, [members, query, groupId])
+  }, [members, query, groupId, teamId])
 
-  const teamCounts = useMemo(() => {
+  const groupCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     for (const member of members ?? []) counts[member.groupId] = (counts[member.groupId] ?? 0) + 1
     return counts
   }, [members])
+
+  // Distinct teams for the currently selected group, grouped for stable order.
+  const teams = useMemo(() => {
+    const counts: Record<string, number> = { all: 0 }
+    const set = new Set<string>()
+    if (groupId !== 'all') {
+      for (const member of members ?? []) {
+        if (member.groupId !== groupId) continue
+        const t = member.team ?? '__none__'
+        set.add(t)
+        counts[t] = (counts[t] ?? 0) + 1
+        counts.all += 1
+      }
+    }
+    return {
+      counts,
+      list: Array.from(set).sort((a, b) => (a === '__none__' ? 1 : b === '__none__' ? -1 : a.localeCompare(b))),
+    }
+  }, [members, groupId])
+
+  const selectGroup = (id: string) => {
+    setGroupId(id)
+    setTeamId('all')
+  }
 
   const loading = groupsLoading || membersLoading
 
@@ -92,22 +118,22 @@ export default function MembersPage({ profile }: { profile: Profile }) {
         <input aria-label="Cari member" placeholder="Cari nama atau nickname..." value={query} onChange={(event) => setQuery(event.target.value)} />
       </div>
 
-      <div className="team-chips" role="group" aria-label="Filter berdasarkan team">
-        <button type="button" className={`team-chip ${groupId === 'all' ? 'active' : ''}`} onClick={() => setGroupId('all')}>
+      <div className="team-chips" role="group" aria-label="Filter berdasarkan grup">
+        <button type="button" className={`team-chip ${groupId === 'all' ? 'active' : ''}`} onClick={() => selectGroup('all')}>
           <span className="team-dot" />
           Semua
           <span className="team-chip-count">{(members ?? []).length}</span>
         </button>
         {(groups ?? []).map((group) => {
           const color = group.primaryColor || '#e86f61'
-          const count = teamCounts[group.id] ?? 0
+          const count = groupCounts[group.id] ?? 0
           return (
             <button
               key={group.id}
               type="button"
               className={`team-chip ${groupId === group.id ? 'active' : ''}`}
               style={{ '--team-color': color } as CSSProperties}
-              onClick={() => setGroupId(group.id)}
+              onClick={() => selectGroup(group.id)}
             >
               <span className="team-dot" />
               {group.name}
@@ -116,6 +142,30 @@ export default function MembersPage({ profile }: { profile: Profile }) {
           )
         })}
       </div>
+
+      {groupId !== 'all' && teams.list.length > 0 && (
+        <div className="team-chips team-chips-sub" role="group" aria-label="Filter berdasarkan team">
+          <button type="button" className={`team-chip team-chip-sub ${teamId === 'all' ? 'active' : ''}`} onClick={() => setTeamId('all')}>
+            Semua team
+            <span className="team-chip-count">{teams.counts.all}</span>
+          </button>
+          {teams.list.map((team) => {
+            const isNone = team === '__none__'
+            const label = isNone ? 'Tanpa team' : `Team ${team}`
+            return (
+              <button
+                key={team}
+                type="button"
+                className={`team-chip team-chip-sub ${teamId === team ? 'active' : ''}`}
+                onClick={() => setTeamId(team)}
+              >
+                {label}
+                <span className="team-chip-count">{teams.counts[team] ?? 0}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {saveError && <p className="form-error" role="alert">{saveError}</p>}
 

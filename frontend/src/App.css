@@ -80,6 +80,10 @@ body{background-color:#f7f5f0;background-image:radial-gradient(circle at 82% 8%,
 .team-chip .team-dot{width:9px;height:9px;border-radius:50%;background:var(--team-color);box-shadow:0 0 0 3px color-mix(in srgb,var(--team-color) 22%,transparent)}
 .team-chip.active .team-dot{background:rgba(255,255,255,.9);box-shadow:none}
 .team-chip-count{font-size:10px;opacity:.75;font-weight:600}
+/* Second-level sub-team filter row (Team KIII/J/T within a group) */
+.team-chips-sub{margin-top:4px}
+.team-chip-sub{--team-color:var(--coral);padding:8px 13px;font-size:11px;font-weight:600;border-radius:11px;box-shadow:none}
+.team-chip-sub.active{background:color-mix(in srgb,var(--group-color,var(--coral)) 16%,transparent);color:var(--ink);border-color:color-mix(in srgb,var(--group-color,var(--coral)) 45%,var(--line))}
 
 /* Group page */
 .group-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;margin-top:30px}

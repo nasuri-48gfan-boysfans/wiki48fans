@@ -18,6 +18,7 @@ function toMember(raw: Record<string, unknown>, groups: Map<string, FrontendGrou
     photoUrl: raw.photo_url ? String(raw.photo_url) : undefined,
     bio: raw.bio ? String(raw.bio) : undefined,
     generation: typeof raw.generation === 'number' ? raw.generation : undefined,
+    team: raw.team ? String(raw.team) : undefined,
     status: toStatus(raw.status as string | null | undefined),
     isActive: Boolean((raw.is_active as boolean | null) ?? true),
     birthDate: raw.birth_date ? String(raw.birth_date) : undefined,

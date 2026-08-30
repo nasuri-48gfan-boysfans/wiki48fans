@@ -6,6 +6,8 @@ export interface MemberRecord {
   name: string
   nickname?: string
   generation?: number
+  /** Team within the group, e.g. 'KIII', 'J', 'T' for JKT48. */
+  team?: string
   birthDate?: string
   birthPlace?: string
   heightCm?: number

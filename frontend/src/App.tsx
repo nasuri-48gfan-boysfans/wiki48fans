@@ -1,20 +1,25 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import type { CSSProperties } from 'react'
-import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom'
 import { Mascot } from './components/Mascot'
 import { Navigation } from './components/Navigation'
-import { Avatar, Badge, Button, Window } from './components/ui'
+import { Avatar, Button, Window } from './components/ui'
 import { getSession, onAuthStateChange, resetPassword, signIn, signOut, signUp } from './lib/auth'
-import { updateOshiIds } from './lib/profile'
 import type { AuthSession, Profile } from './types/auth'
-import './App.css'
 
-const liveMembers = [
-  { name: 'Luna Salsabila', group: 'JKT48', viewers: '2.4k' },
-  { name: 'Mikaela Kusuma', group: 'JKT48', viewers: '1.8k' },
-  { name: 'Aoi Tanaka', group: 'AKB48', viewers: '986' },
-]
+import HomePage from './pages/HomePage'
+import MembersPage from './pages/MembersPage'
+import MemberDetailPage from './pages/MemberDetailPage'
+import LivePage from './pages/LivePage'
+import NotificationsPage from './pages/NotificationsPage'
+import ProfilePage from './pages/ProfilePage'
+import SettingsPage from './pages/SettingsPage'
+import WikiPage from './pages/WikiPage'
+import CommunityPage from './pages/CommunityPage'
+import MessagesPage from './pages/MessagesPage'
+import ChannelsPage from './pages/ChannelsPage'
+
+import './App.css'
 
 function AuthLayout({ mode }: { mode: 'login' | 'register' }) {
   const navigate = useNavigate()
@@ -22,31 +27,220 @@ function AuthLayout({ mode }: { mode: 'login' | 'register' }) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
   const submit = (event: FormEvent) => {
     event.preventDefault()
     setError('')
     setSubmitting(true)
     const request = mode === 'register' ? signUp(email, password) : signIn(email, password)
-    request.then((session) => { if (mode === 'register' || !session) navigate('/verify-email'); else window.location.assign('/') }).catch((requestError: Error) => setError(requestError.message)).finally(() => setSubmitting(false))
+    request
+      .then((session) => {
+        if (mode === 'register' || !session) navigate('/verify-email')
+        else window.location.assign('/')
+      })
+      .catch((requestError: Error) => setError(requestError.message))
+      .finally(() => setSubmitting(false))
   }
-  return <main className="auth-page"><div className="auth-art"><div className="brand-mark"><span className="brand-bird">✦</span><span>48Fans<span className="brand-muted">Wiki</span></span></div><div className="auth-art-copy"><Mascot /><span className="eyebrow">A home for every fan</span><h1>Keep the moments<br /><em>that matter</em> close.</h1><p>Follow your favorites, discover the story behind every member, and never miss a live.</p></div><div className="art-footer"><span>Built by fans, for fans</span><span>01 / 48</span></div></div><section className="auth-form"><div className="auth-form-inner"><div className="mobile-brand"><div className="brand-mark"><span className="brand-bird">✦</span><span>48Fans<span className="brand-muted">Wiki</span></span></div></div><span className="eyebrow">{mode === 'login' ? 'Welcome back' : 'Start your journey'}</span><h2>{mode === 'login' ? 'Sign in to your space' : 'Create your fan account'}</h2><p className="form-intro">{mode === 'login' ? 'Your corner of the 48 Group community is waiting.' : 'A few details, then we will get you set up.'}</p><form onSubmit={submit}><label>Email address<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" required /></label><label>Password<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 8 characters" minLength={8} required /></label>{mode === 'login' && <a className="form-link" href="/forgot-password">Forgot password?</a>}{error && <p className="form-error" role="alert">{error}</p>}<Button type="submit" disabled={submitting}>{submitting ? 'Connecting...' : mode === 'login' ? 'Continue to 48FansWiki  →' : 'Create account  →'}</Button></form><p className="form-switch">{mode === 'login' ? 'New here?' : 'Already have an account?'} <a href={mode === 'login' ? '/register' : '/login'}>{mode === 'login' ? 'Create an account' : 'Sign in'}</a></p><small className="legal-copy">By continuing, you agree to our community guidelines and privacy policy.</small></div></section></main>
+
+  const brand = (
+    <div className="brand-mark">
+      <span className="brand-bird">✦</span>
+      <span>48Fans<span className="brand-muted">Wiki</span></span>
+    </div>
+  )
+
+  return (
+    <main className="auth-page">
+      <div className="auth-art">
+        {brand}
+        <div className="auth-art-copy">
+          <Mascot />
+          <span className="eyebrow">A home for every fan</span>
+          <h1>Keep the moments<br /><em>that matter</em> close.</h1>
+          <p>Follow your favorites, discover the story behind every member, and never miss a live.</p>
+        </div>
+        <div className="art-footer">
+          <span>Built by fans, for fans</span>
+          <span>01 / 48</span>
+        </div>
+      </div>
+
+      <section className="auth-form">
+        <div className="auth-form-inner">
+          <div className="mobile-brand">{brand}</div>
+          <span className="eyebrow">{mode === 'login' ? 'Welcome back' : 'Start your journey'}</span>
+          <h2>{mode === 'login' ? 'Sign in to your space' : 'Create your fan account'}</h2>
+          <p className="form-intro">
+            {mode === 'login'
+              ? 'Your corner of the 48 Group community is waiting.'
+              : 'A few details, then we will get you set up.'}
+          </p>
+          <form onSubmit={submit}>
+            <label>
+              Email address
+              <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" required />
+            </label>
+            <label>
+              Password
+              <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 8 characters" minLength={8} required />
+            </label>
+            {mode === 'login' && <a className="form-link" href="/forgot-password">Forgot password?</a>}
+            {error && <p className="form-error" role="alert">{error}</p>}
+            <Button type="submit" disabled={submitting}>
+              {submitting ? 'Connecting...' : mode === 'login' ? 'Continue to 48FansWiki  →' : 'Create account  →'}
+            </Button>
+          </form>
+          <p className="form-switch">
+            {mode === 'login' ? 'New here?' : 'Already have an account?'}{' '}
+            <a href={mode === 'login' ? '/register' : '/login'}>{mode === 'login' ? 'Create an account' : 'Sign in'}</a>
+          </p>
+          <small className="legal-copy">By continuing you agree to the 48FansWiki terms and privacy policy. Real-time member and live data is loaded from live sources — no fabricated content.</small>
+        </div>
+      </section>
+    </main>
+  )
 }
 
-function VerifyPage() { return <main className="center-page"><Mascot /><span className="eyebrow">One more step</span><h1>Check your inbox.</h1><p>We sent a verification link to your new account. Once verified, you can choose your Oshi and interests.</p><Button onClick={() => window.location.assign('/')}>I have verified my email  →</Button><a href="/login" className="form-link">Return to sign in</a></main> }
-function Home({ profile }: { profile: Profile }) { return <div className="home-grid"><section className="welcome-banner"><div><span className="eyebrow">Your daily orbit</span><h2>There is always<br /><em>something happening.</em></h2><p>Catch up on the latest from your Oshi and the community.</p><Button>Explore live now  ↗</Button></div><Mascot compact /></section><Window title="Live right now" eyebrow="Don't miss a moment" className="live-window"><a className="text-link" href="/live">See all live  →</a><div className="live-list">{liveMembers.map((member, index) => <div className={`live-row ${index === 0 ? 'priority' : ''}`} key={member.name}><Avatar name={member.name} /><div className="member-meta"><strong>{index === 0 && <span className="star">★ </span>}{member.name}</strong><small>{member.group}</small></div><Badge tone="live">LIVE</Badge><span className="viewer-count">◉ {member.viewers}</span></div>)}</div></Window><Window title="Your quick links" eyebrow="Make it yours"><div className="quick-links"><a href="/members"><span>✦</span><strong>Choose your Oshi</strong><small>Personalize your feed</small></a><a href="/wiki"><span>▤</span><strong>Explore the Wiki</strong><small>1,248 stories to discover</small></a><a href="/community"><span>◌</span><strong>Join the conversation</strong><small>See what fans are saying</small></a></div></Window><Window title="Your activity" eyebrow="A little recap"><div className="activity-empty"><span className="activity-mark">✺</span><p>{profile.displayName}, your activity will appear here as you explore.</p><a href="/wiki" className="text-link">Start exploring  →</a></div></Window></div> }
-function MembersPage({ profile }: { profile: Profile }) { const [selected, setSelected] = useState(profile.oshiIds); const [saving, setSaving] = useState(false); const [saved, setSaved] = useState(false); const [error, setError] = useState(''); const members = [{ id: '00000000-0000-0000-0000-000000000001', name: 'Luna Salsabila', group: 'JKT48', color: '#e86f61' }, { id: '00000000-0000-0000-0000-000000000002', name: 'Mikaela Kusuma', group: 'JKT48', color: '#e86f61' }, { id: '00000000-0000-0000-0000-000000000003', name: 'Aoi Tanaka', group: 'AKB48', color: '#6b91bd' }, { id: '00000000-0000-0000-0000-000000000004', name: 'Rina Pratama', group: 'NMB48', color: '#7e9f7f' }]; const toggle = (id: string) => setSelected((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]); const save = () => { setSaving(true); setError(''); updateOshiIds(profile.id, selected).then(() => setSaved(true)).catch((requestError: Error) => setError(requestError.message)).finally(() => setSaving(false)) }; return <div className="members-page"><div className="page-intro"><span className="eyebrow">Make it personal</span><h2>Choose your Oshi.</h2><p>Pick one or more members to bring closer to your daily orbit.</p></div><div className="member-grid">{members.map((member) => <button className={`member-card ${selected.includes(member.id) ? 'selected' : ''}`} key={member.id} onClick={() => toggle(member.id)} style={{ '--group-color': member.color } as CSSProperties}><Avatar name={member.name} size="large" /><span className="member-card-check">{selected.includes(member.id) ? '✓' : ''}</span><strong>{member.name}</strong><small>{member.group}</small></button>)}</div>{error && <p className="form-error" role="alert">{error}</p>}<div className="members-actions"><span>{selected.length} selected</span><Button onClick={save} disabled={saving}>{saving ? 'Saving...' : saved ? 'Saved ✓' : 'Save my Oshi  →'}</Button></div></div> }
-function WikiPage() { const entries = [{ title: 'JKT48', type: 'Group', meta: '48 members · Jakarta' }, { title: 'Luna Salsabila', type: 'Member', meta: 'JKT48 · Generation 10' }, { title: 'Heavy Rotation', type: 'Song', meta: 'Released 2010 · AKB48' }, { title: 'JKT48 Theater', type: 'Event', meta: 'Jakarta · Regular performance' }]; return <div className="feature-page"><div className="page-intro"><span className="eyebrow">The living archive</span><h2>Explore the Wiki.</h2><p>Stories, people, and moments from across the 48 Group universe.</p></div><div className="search-box"><span>⌕</span><input aria-label="Search the Wiki" placeholder="Search members, groups, songs, events..." /></div><div className="filter-row"><Badge tone="accent">All entries</Badge><span>Groups</span><span>Members</span><span>Songs</span><span>Events</span></div><div className="wiki-list">{entries.map((entry) => <a className="wiki-entry" href="/wiki" key={entry.title}><span className="entry-icon">{entry.type === 'Member' ? '✦' : entry.type === 'Group' ? '◈' : entry.type === 'Song' ? '♫' : '◆'}</span><span><strong>{entry.title}</strong><small>{entry.meta}</small></span><Badge>{entry.type}</Badge><span className="entry-arrow">→</span></a>)}</div><Window title="Recently updated" eyebrow="From the community"><div className="revision-row"><span className="revision-dot" /><span><strong>JKT48 member profiles</strong><small>Updated 2 hours ago by @mika</small></span><span className="text-link">View revision →</span></div><div className="revision-row"><span className="revision-dot blue" /><span><strong>History of Team J</strong><small>Updated yesterday by @hana</small></span><span className="text-link">View revision →</span></div></Window></div> }
-function LivePage() { const fallback = [{ name: 'Luna Salsabila', group: 'JKT48', platform: 'SHOWROOM', viewers: '2,421', duration: '01:24:18' }, { name: 'Mikaela Kusuma', group: 'JKT48', platform: 'IDN', viewers: '1,802', duration: '00:42:07' }, { name: 'Aoi Tanaka', group: 'AKB48', platform: 'SHOWROOM', viewers: '986', duration: '00:18:52' }]; const [liveNow, setLiveNow] = useState(fallback); const [loading, setLoading] = useState(Boolean(import.meta.env.VITE_API_URL)); const [error, setError] = useState(''); useEffect(() => { const apiUrl = import.meta.env.VITE_API_URL; if (!apiUrl) return; fetch(`${apiUrl}/api/live`).then(async (response) => { if (!response.ok) throw new Error('Live service is unavailable'); const result = await response.json() as { sessions?: Array<{ memberName: string; groupName?: string; platform: 'SHOWROOM' | 'IDN'; viewerCount?: number; startedAt?: string }> }; setLiveNow((result.sessions || []).map((session) => ({ name: session.memberName, group: session.groupName || '48 Group', platform: session.platform, viewers: session.viewerCount?.toLocaleString() || '—', duration: session.startedAt ? formatDuration(session.startedAt) : '—' }))) }).catch((requestError: Error) => setError(requestError.message)).finally(() => setLoading(false)) }, []); const priority = liveNow.slice(0, 1); const others = liveNow.slice(1); return <div className="feature-page"><div className="page-intro page-intro-row"><div><span className="eyebrow">Activity across the groups</span><h2>Live now.</h2><p>Follow the moments as they happen.</p></div><Badge tone="live">● {loading ? 'Checking live' : `${liveNow.length} members live`}</Badge></div>{error && <p className="form-error" role="alert">{error}. Showing the latest preview data.</p>}<div className="live-sections"><Window title="Your Oshi" eyebrow="Priority"><div className="live-cards">{priority.map((member) => <LiveCard key={member.name} member={member} priority />)}</div></Window><Window title="Everyone live" eyebrow="Across SHOWROOM & IDN"><div className="live-cards">{others.map((member) => <LiveCard key={member.name} member={member} />)}</div></Window></div><Window title="Live activity" eyebrow="A quiet look at the numbers"><div className="stats-strip"><div><strong>{liveNow.length}</strong><small>Sessions now</small></div><div><strong>12.8k</strong><small>Viewers tracked</small></div><div><strong>3h 42m</strong><small>Time live today</small></div></div></Window></div> }
-function formatDuration(startedAt: string) { const elapsed = Math.max(0, Date.now() - new Date(startedAt).getTime()); const minutes = Math.floor(elapsed / 60000); return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}:00` }
-function LiveCard({ member, priority = false }: { member: { name: string; group: string; platform: string; viewers: string; duration: string }; priority?: boolean }) { return <article className={`live-card ${priority ? 'priority' : ''}`}><Avatar name={member.name} size="large" /><div className="live-card-main"><div className="live-card-title"><strong>{priority && <span className="star">★ </span>}{member.name}</strong><Badge tone="live">LIVE</Badge></div><small>{member.group} · {member.platform}</small><div className="live-card-meta"><span>◉ {member.viewers} watching</span><span>◷ {member.duration}</span></div></div><Button variant="outline">Watch ↗</Button></article> }
-function ProfilePage({ profile }: { profile: Profile }) { return <div className="feature-page"><div className="profile-hero"><Avatar name={profile.displayName} size="large" /><div><span className="eyebrow">Your fan profile</span><h2>{profile.displayName}</h2><p>@{profile.handle} · Member since today</p></div><Button variant="outline">Edit profile</Button></div><div className="profile-columns"><Window title="Your Oshi" eyebrow="The members you follow"><div className="profile-oshi"><Avatar name="Luna Salsabila" /><span><strong>{profile.oshiIds.length ? 'Your selected members' : 'No Oshi selected yet'}</strong><small>{profile.oshiIds.length ? `${profile.oshiIds.length} member(s) in your orbit` : 'Choose members to personalize your home'}</small></span><a href="/members" className="text-link">Manage →</a></div></Window><Window title="Your contribution" eyebrow="A little footprint"><div className="stats-strip compact"><div><strong>0</strong><small>Wiki edits</small></div><div><strong>0</strong><small>Discussions</small></div><div><strong>0</strong><small>Friends</small></div></div></Window></div></div> }
-function SettingsPage({ profile }: { profile: Profile }) { return <div className="feature-page narrow-page"><div className="page-intro"><span className="eyebrow">Make 48FansWiki yours</span><h2>Settings.</h2><p>Manage your profile and the moments you want to hear about.</p></div><Window title="Profile details" eyebrow="Visible to the community"><div className="settings-form"><label>Display name<input defaultValue={profile.displayName} /></label><label>Handle<input defaultValue={`@${profile.handle}`} /></label><Button>Save changes</Button></div></Window><Window title="Notifications" eyebrow="Choose what reaches you"><div className="toggle-row"><span><strong>Oshi goes live</strong><small>Always alert me when an Oshi starts a live</small></span><input type="checkbox" defaultChecked /></div><div className="toggle-row"><span><strong>Following activity</strong><small>Updates from members and groups you follow</small></span><input type="checkbox" defaultChecked /></div><div className="toggle-row"><span><strong>Community</strong><small>Replies, friend requests, and discussions</small></span><input type="checkbox" /></div></Window></div> }
-function NotificationsPage() { return <div className="feature-page narrow-page"><div className="page-intro page-intro-row"><div><span className="eyebrow">Stay in the loop</span><h2>Notifications.</h2></div><span className="text-link">Mark all as read</span></div><Window title="Today" eyebrow="3 new moments"><div className="notification-list"><div className="notification-item unread"><Avatar name="Luna Salsabila" /><span><strong>★ Luna Salsabila is live now</strong><small>SHOWROOM · 4 minutes ago</small></span></div><div className="notification-item unread"><Avatar name="Wiki" /><span><strong>A new revision was added to JKT48</strong><small>Wiki · 2 hours ago</small></span></div><div className="notification-item"><Avatar name="Mikaela Kusuma" /><span><strong>Mikaela Kusuma shared a new activity</strong><small>Following · 5 hours ago</small></span></div></div></Window></div> }
-function CommunityPage() { const [liked, setLiked] = useState<number[]>([]); const posts = [{ name: 'Hana Putri', group: 'JKT48 fans', time: '18 min ago', text: 'The new theater setlist is such a beautiful mix of classics and surprises. What song are you hoping to hear next?', likes: 42 }, { name: 'Mika Sato', group: 'AKB48 fans', time: '1 hr ago', text: 'Added a source to the Team history page today. Small edits make the archive better for everyone.', likes: 18 }]; return <div className="feature-page"><div className="page-intro page-intro-row"><div><span className="eyebrow">The fan floor</span><h2>Community.</h2><p>A little place to share, discuss, and find your people.</p></div><Button>Start a discussion  +</Button></div><div className="community-layout"><Window title="Latest from fans" eyebrow="Your conversations"><div className="community-feed">{posts.map((post, index) => <article className="post" key={post.name}><Avatar name={post.name} /><div className="post-content"><div className="post-heading"><span><strong>{post.name}</strong><small>{post.group} · {post.time}</small></span><span>•••</span></div><p>{post.text}</p><div className="post-actions"><button onClick={() => setLiked((current) => current.includes(index) ? current.filter((item) => item !== index) : [...current, index])}>♡ {post.likes + (liked.includes(index) ? 1 : 0)}</button><button>□ Reply</button><button>↗ Share</button></div></div></article>)}</div></Window><Window title="People to meet" eyebrow="Find your circle"><div className="people-list"><div><Avatar name="Rani K." /><span><strong>Rani K.</strong><small>JKT48 · 12 mutual interests</small></span><Button variant="outline">Add</Button></div><div><Avatar name="Dito M." /><span><strong>Dito M.</strong><small>AKB48 · Wiki contributor</small></span><Button variant="outline">Add</Button></div></div></Window></div></div> }
-function MessagesPage() { const [active, setActive] = useState('Rani K.'); const conversations = [{ name: 'Rani K.', preview: 'Did you see the new setlist?', time: '2m', color: '#e86f61' }, { name: 'Dito M.', preview: 'I added the source link.', time: '1h', color: '#7da2c7' }, { name: 'JKT48 Wiki team', preview: 'Welcome to the discussion.', time: 'Yesterday', color: '#83b99b' }]; return <div className="feature-page"><div className="page-intro"><span className="eyebrow">One-to-one, fan-to-fan</span><h2>Messages.</h2><p>Keep the conversation close.</p></div><div className="messages-layout"><Window title="Inbox" eyebrow="3 conversations"><div className="conversation-list">{conversations.map((conversation) => <button className={active === conversation.name ? 'conversation active' : 'conversation'} key={conversation.name} onClick={() => setActive(conversation.name)}><Avatar name={conversation.name} /><span><strong>{conversation.name}</strong><small>{conversation.preview}</small></span><time>{conversation.time}</time></button>)}</div></Window><Window title={active} eyebrow="Direct message"><div className="chat-panel"><div className="chat-date">Today</div><div className="bubble received">Hey! Did you see the new setlist?</div><div className="bubble sent">Not yet, I am checking the Wiki now. It looks lovely.</div><div className="bubble received">Right? Let me know your favorite track.</div><div className="message-compose"><input aria-label="Message" placeholder="Write a message..." /><Button aria-label="Send message">→</Button></div></div></Window></div></div> }
-function ChannelsPage() { const channels = [{ name: 'JKT48 Daily', members: '4.8k followers', desc: 'Your daily dose of JKT48 news, moments, and discussion.', color: '#e86f61' }, { name: '48 History Club', members: '1.2k followers', desc: 'For fans who love the stories behind the stages.', color: '#7da2c7' }, { name: 'The Theater Seat', members: '806 followers', desc: 'Setlists, reviews, and the joy of live performance.', color: '#83b99b' }]; return <div className="feature-page"><div className="page-intro page-intro-row"><div><span className="eyebrow">Fan-made spaces</span><h2>Channels.</h2><p>Follow the conversations that feel like home.</p></div><Button>Create a channel  +</Button></div><div className="channel-grid">{channels.map((channel) => <article className="channel-card" style={{ '--channel-color': channel.color } as CSSProperties} key={channel.name}><div className="channel-banner" /><div className="channel-card-body"><Avatar name={channel.name} size="large" /><h3>{channel.name}</h3><small>{channel.members}</small><p>{channel.desc}</p><Button variant="outline">Follow  +</Button></div></article>)}</div><Window title="How channels work" eyebrow="A note for future creators"><p className="window-copy">Channels are spaces made by fans for fans. Creation will require verified payment before activation. No channel is activated by a frontend payment state.</p></Window></div> }
-function ForgotPasswordPage() { const [email, setEmail] = useState(''); const [sent, setSent] = useState(false); const [error, setError] = useState(''); const submit = (event: FormEvent) => { event.preventDefault(); setError(''); resetPassword(email).then(() => setSent(true)).catch((requestError: Error) => setError(requestError.message)) }; return <main className="center-page">{sent ? <><Mascot /><span className="eyebrow">Check your inbox</span><h1>Reset link sent.</h1><p>If an account exists for {email}, Supabase has sent instructions to reset the password.</p><a href="/login" className="form-link">Return to sign in</a></> : <><span className="eyebrow">Account recovery</span><h1>Forgot password?</h1><p>Enter your email and we will send a secure reset link.</p><form onSubmit={submit} className="recovery-form"><label>Email address<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" required /></label>{error && <p className="form-error" role="alert">{error}</p>}<Button type="submit">Send reset link  →</Button></form><a href="/login" className="form-link">Return to sign in</a></>}</main> }
-function Placeholder({ title = 'Coming together' }: { title?: string }) { return <Window title={title} eyebrow="This space is ready for you"><div className="placeholder"><span>✦</span><p>This part of 48FansWiki is being prepared for the next phase.</p></div></Window> }
-function ProtectedLayout({ profile, onSignOut }: { profile: Profile; onSignOut: () => void }) { return <div className="app-shell"><Navigation profile={profile} onSignOut={onSignOut} /><main className="content"><header className="topbar"><div><span className="eyebrow">Friday, 28 August 2026</span><h1>Good afternoon, {profile.displayName.split(' ')[0]} <span className="wave">✦</span></h1></div><div className="top-actions"><a href="/notifications" className="icon-button" aria-label="Notifications">♧<span className="notification-dot" /></a><Avatar name={profile.displayName} /></div></header><Routes><Route path="/" element={<Home profile={profile} />} /><Route path="/wiki" element={<WikiPage />} /><Route path="/members" element={<MembersPage profile={profile} />} /><Route path="/live" element={<LivePage />} /><Route path="/profile" element={<ProfilePage profile={profile} />} /><Route path="/settings" element={<SettingsPage profile={profile} />} /><Route path="/notifications" element={<NotificationsPage />} /><Route path="/community" element={<CommunityPage />} /><Route path="/messages" element={<MessagesPage />} /><Route path="/channels" element={<ChannelsPage />} /><Route path="*" element={<Placeholder />} /></Routes></main></div> }
-function App() { const [session, setSession] = useState<AuthSession | null>(null); const [loading, setLoading] = useState(true); useEffect(() => { getSession().then(setSession).finally(() => setLoading(false)); const { data } = onAuthStateChange((nextSession) => setSession(nextSession)); return () => data.subscription.unsubscribe() }, []); const handleSignOut = () => { signOut().then(() => setSession(null)) }; if (loading) return <main className="center-page"><Mascot /><p>Loading your space...</p></main>; return <BrowserRouter><Routes><Route path="/login" element={session ? <Navigate to="/" replace /> : <AuthLayout mode="login" />} /><Route path="/register" element={session ? <Navigate to="/" replace /> : <AuthLayout mode="register" />} /><Route path="/forgot-password" element={<ForgotPasswordPage />} /><Route path="/verify-email" element={<VerifyPage />} /><Route path="*" element={session ? <ProtectedLayout profile={session.profile} onSignOut={handleSignOut} /> : <Navigate to="/login" replace />} /></Routes></BrowserRouter> }
+function VerifyPage() {
+  return (
+    <main className="center-page">
+      <Mascot />
+      <span className="eyebrow">One more step</span>
+      <h1>Check your inbox.</h1>
+      <p>We sent a verification link to your new account. Once verified, you can choose your Oshi and interests.</p>
+      <Button onClick={() => window.location.assign('/')}>I have verified my email  →</Button>
+      <a href="/login" className="form-link">Return to sign in</a>
+    </main>
+  )
+}
+
+function ForgotPasswordPage() {
+  const [email, setEmail] = useState('')
+  const [sent, setSent] = useState(false)
+  const [error, setError] = useState('')
+  const submit = (event: FormEvent) => {
+    event.preventDefault()
+    setError('')
+    resetPassword(email).then(() => setSent(true)).catch((requestError: Error) => setError(requestError.message))
+  }
+  return (
+    <main className="center-page">
+      {sent ? (
+        <>
+          <Mascot />
+          <span className="eyebrow">Check your inbox</span>
+          <h1>Reset link sent.</h1>
+          <p>If an account exists for {email}, Supabase has sent instructions to reset the password.</p>
+          <a href="/login" className="form-link">Return to sign in</a>
+        </>
+      ) : (
+        <>
+          <span className="eyebrow">Account recovery</span>
+          <h1>Forgot password?</h1>
+          <p>Enter your email and we will send a secure reset link.</p>
+          <form onSubmit={submit} className="recovery-form">
+            <label>
+              Email address
+              <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" required />
+            </label>
+            {error && <p className="form-error" role="alert">{error}</p>}
+            <Button type="submit">Send reset link  →</Button>
+          </form>
+          <a href="/login" className="form-link">Return to sign in</a>
+        </>
+      )}
+    </main>
+  )
+}
+
+function NotFoundPage() {
+  return (
+    <Window title="Halaman tidak ditemukan" eyebrow="404">
+      <div className="placeholder"><span aria-hidden="true">✦</span><p>Halaman ini tidak ada, atau datanya belum tersedia.</p></div>
+    </Window>
+  )
+}
+
+function MemberDetailRoute() {
+  const { id = '' } = useParams()
+  return <MemberDetailPage memberId={id} />
+}
+
+function dayInfo(): { weekday: string; date: string; greeting: string } {
+  const now = new Date()
+  const weekday = now.toLocaleDateString('en-US', { weekday: 'long' })
+  const date = now.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
+  const hour = now.getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
+  return { weekday, date, greeting }
+}
+
+function ProtectedLayout({ profile, onSignOut, onProfileUpdated }: { profile: Profile; onSignOut: () => void; onProfileUpdated: () => void }) {
+  const today = dayInfo()
+  return (
+    <div className="app-shell">
+      <Navigation profile={profile} onSignOut={onSignOut} />
+      <main className="content">
+        <header className="topbar">
+          <div>
+            <span className="eyebrow">{today.weekday}, {today.date}</span>
+            <h1>{today.greeting}, {profile.displayName.split(' ')[0]} <span className="wave">✦</span></h1>
+          </div>
+          <div className="top-actions">
+            <a href="/notifications" className="icon-button" aria-label="Notifications">♧<span className="notification-dot" /></a>
+            <Avatar name={profile.displayName} />
+          </div>
+        </header>
+        <Routes>
+          <Route path="/" element={<HomePage profile={profile} />} />
+          <Route path="/wiki" element={<WikiPage />} />
+          <Route path="/members" element={<MembersPage profile={profile} />} />
+          <Route path="/members/:id" element={<MemberDetailRoute />} />
+          <Route path="/live" element={<LivePage profile={profile} />} />
+          <Route path="/profile" element={<ProfilePage profile={profile} />} />
+          <Route path="/settings" element={<SettingsPage profile={profile} onSaved={onProfileUpdated} />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/community" element={<CommunityPage />} />
+          <Route path="/messages" element={<MessagesPage />} />
+          <Route path="/channels" element={<ChannelsPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </main>
+    </div>
+  )
+}
+
+function App() {
+  const [session, setSession] = useState<AuthSession | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    getSession().then(setSession).finally(() => setLoading(false))
+    const { data } = onAuthStateChange((nextSession) => setSession(nextSession))
+    return () => data.subscription.unsubscribe()
+  }, [])
+
+  const handleSignOut = () => { signOut().then(() => setSession(null)) }
+  const refreshProfile = () => { getSession().then(setSession) }
+
+  if (loading) return <main className="center-page"><Mascot /><p>Loading your space...</p></main>
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={session ? <Navigate to="/" replace /> : <AuthLayout mode="login" />} />
+        <Route path="/register" element={session ? <Navigate to="/" replace /> : <AuthLayout mode="register" />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/verify-email" element={<VerifyPage />} />
+        <Route
+          path="*"
+          element={session
+            ? <ProtectedLayout profile={session.profile} onSignOut={handleSignOut} onProfileUpdated={refreshProfile} />
+            : <Navigate to="/login" replace />}
+        />
+      </Routes>
+    </BrowserRouter>
+  )
+}
+
 export default App

@@ -11,6 +11,15 @@ export interface SourceAdapter {
   /** Unique group slug this adapter imports for, e.g. `jkt48`. */
   readonly groupSlug: string
   /**
+   * When true, records that already exist (matched by sourceIdentifier) are only
+   * enriched with their live-tracking provider ids (showroom_room_id, idn_user_id)
+   * and is_active — every other column is preserved. Used by sources whose payload
+   * is thinner than the primary catalog (e.g. JKT48Connect) so an import never
+   * clobbers richer fields (height, birth date, full names, ...) with NULLs.
+   * New records (no existing match) are still inserted wholesale.
+   */
+  readonly enrichOnly?: boolean
+  /**
    * Fetch the cheap base list of members. Every normalized record must carry a
    * stable `sourceIdentifier` and `source`. Must not touch the database.
    * @throws on a hard, unrecoverable source failure.
@@ -157,6 +166,7 @@ async function upsertRecord(
   record: MemberRecord,
   dryRun: boolean,
   report: ImportReport,
+  enrichOnly: boolean,
 ): Promise<void> {
   if (dryRun) return
   const existing = await store.findByIdentity(groupId, record.sourceIdentifier)
@@ -176,6 +186,9 @@ async function upsertRecord(
   for (const key of Object.keys(target)) {
     // last_verified_at is refresh metadata, not content; it alone is not an update.
     if (key === 'last_verified_at') continue
+    // Enrichment never overwrites existing columns with the thinner source's
+    // NULLs; it only updates the live-tracking ids and the active flag.
+    if (enrichOnly && !(key === 'showroom_room_id' || key === 'idn_user_id' || key === 'is_active')) continue
     if (comparable(current[key]) !== comparable(target[key])) changed[key] = target[key]
   }
   if (Object.keys(changed).length === 0) { report.unchanged += 1; return }
@@ -203,6 +216,7 @@ export async function importMembers(
   const maxAgeMs = options.maxDetailAgeMs ?? 24 * 60 * 60 * 1000
   const store = options.store ?? buildStore()
   const hasDetail = typeof adapter.fetchDetail === 'function'
+  const enrichOnly = Boolean(adapter.enrichOnly)
 
   const report: ImportReport = {
     groupId: '',
@@ -302,7 +316,7 @@ export async function importMembers(
     report.valid += 1
     report.source = report.source ?? record.source
 
-    await upsertRecord(store, group.id, record, dryRun, report)
+    await upsertRecord(store, group.id, record, dryRun, report, enrichOnly)
     options.onProgress?.({ done, total, code: baseRecord.sourceIdentifier, message: dryRun ? 'would import' : 'imported' })
   }
 

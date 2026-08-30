@@ -169,30 +169,45 @@ test('importMembers reports a source fetch failure and keeps other fields zero',
 
 test('normalizeJkt48Connect maps community member incl. live-tracking ids', () => {
   const member = normalizeJkt48Connect({
-    member_id: 42,
-    full_name: 'Freya Jayawardana',
-    nickname: 'Freya',
-    birthday: '2006-02-13',
-    height: 165,
-    blood_type: 'AB',
-    generation: 8,
-    is_active: true,
-    idn_user_id: 'idn-abc',
-    showroom_room_id: 1234,
-    photo_url: 'https://img/freya.jpg',
+    _id: 'FREYA_JAYAWARDANA',
+    name: 'Freya Jayawardana',
+    nicknames: ['Freya'],
+    generation: 'gen8-jkt48',
+    room_id: 1234,
+    sr_exists: true,
+    is_graduate: false,
+    team: 'KIII',
+    socials: [
+      { title: 'SHOWROOM', url: 'https://www.showroom-live.com/JKT48_Freya' },
+      { title: 'IDN', url: 'https://click.idn.media/VKUf?af_dp=idnapp://profile/f001ba66-3c51-4849-9afa-13cf74eb1571' },
+    ],
+    img: 'https://img/freya.jpg',
   })
-  assert.equal(member.sourceIdentifier, '42')
+  assert.equal(member.sourceIdentifier, 'FREYA_JAYAWARDANA')
   assert.equal(member.generation, 8)
   assert.equal(member.status, 'active')
   assert.equal(member.showroomRoomId, '1234')
-  assert.equal(member.idnUserId, 'idn-abc')
+  assert.equal(member.idnUserId, 'f001ba66-3c51-4849-9afa-13cf74eb1571')
   assert.equal(member.source, 'jkt48connect')
 })
 
-test('normalizeJkt48Connect marks graduated and drops bad heights', () => {
-  const member = normalizeJkt48Connect({ member_id: 7, full_name: 'Old', graduation_date: '2023-03-30', height: 9999 })
+test('normalizeJkt48Connect marks graduated and leaves no provider ids when absent', () => {
+  const member = normalizeJkt48Connect({ _id: 'OLD_MEMBER', name: 'Old Member', room_id: 999, is_graduate: true, socials: [] })
   assert.equal(member.status, 'graduated')
-  assert.equal(member.heightCm, undefined)
+  assert.equal(member.showroomRoomId, '999')
+  assert.equal(member.idnUserId, undefined)
+})
+
+test('normalizeJkt48Connect keeps showroom id, drops bad generations, and omits idn without a profile', () => {
+  const member = normalizeJkt48Connect({ _id: 'MIKAELA_KUSJANTO', name: 'Mikaela Kusjanto', room_id: 782345, generation: 'unknown-gen', socials: [{ title: 'SHOWROOM', url: 'https://www.showroom-live.com/JKT48_Mikaela' }] })
+  assert.equal(member.showroomRoomId, '782345')
+  assert.equal(member.generation, undefined)
+  assert.equal(member.idnUserId, undefined)
+})
+
+test('normalizeJkt48Connect treats room_id 0 as no showroom id', () => {
+  const member = normalizeJkt48Connect({ _id: 'FAHIRA_PUTRI', name: 'Fahira Putri', room_id: 0, socials: [] })
+  assert.equal(member.showroomRoomId, undefined)
 })
 
 test('importer persists live-tracking platform ids from the source', async () => {
@@ -202,6 +217,37 @@ test('importer persists live-tracking platform ids from the source', async () =>
   assert.equal(report.created, 1)
   assert.equal(rows[0].showroom_room_id, '1234')
   assert.equal(rows[0].idn_user_id, 'idn-x')
+})
+
+test('enrichOnly updates provider ids on existing members without clobbering catalog fields', async () => {
+  // Seed a rich existing member (like a 48pedia row) with no provider ids yet.
+  const existing = [record({ sourceIdentifier: 'FREYA_JAYAWARDANA', name: 'Freyanashifa Jayawardana', heightCm: 165, bloodType: 'A' })]
+  const { store, rows } = fakeStore(existing)
+  const adapter: SourceAdapter = {
+    groupSlug: 'jkt48',
+    enrichOnly: true,
+    async fetchList() {
+      return [
+        record({ sourceIdentifier: 'FREYA_JAYAWARDANA', name: 'Freya', showroomRoomId: '791261', idnUserId: 'idn-uuid-1' }),
+        record({ sourceIdentifier: 'NEW_MEMBER', name: 'New Member', showroomRoomId: '123', idnUserId: 'idn-uuid-2' }),
+      ]
+    },
+  }
+  const report = await importMembers(adapter, { store })
+  assert.equal(report.errors.length, 0)
+  assert.equal(report.updated, 1) // matched existing member enriched
+  assert.equal(report.created, 1) // genuinely-new member inserted wholesale
+  const enriched = rows.find((row) => row.source_identifier === 'FREYA_JAYAWARDANA')!
+  assert.equal(enriched.showroom_room_id, '791261')
+  assert.equal(enriched.idn_user_id, 'idn-uuid-1')
+  // Richer catalog fields are preserved, not overwritten with NULLs.
+  assert.equal(enriched.name, 'Freyanashifa Jayawardana')
+  assert.equal(enriched.height_cm, 165)
+  assert.equal(enriched.blood_type, 'A')
+  const inserted = rows.find((row) => row.source_identifier === 'NEW_MEMBER')!
+  assert.equal(inserted.showroom_room_id, '123')
+  assert.equal(inserted.idn_user_id, 'idn-uuid-2')
+  assert.equal(inserted.name, 'New Member')
 })
 
 test('normalize48pedia maps the MemberDetail schema and keeps provenance', () => {

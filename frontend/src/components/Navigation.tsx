@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom'
 import type { Profile } from '../types/auth'
 import { Avatar, Button } from './ui'
 import { Icon, type IconName } from './icons'
+import { BirdLogo } from './Mascot'
 
 const links: Array<[string, IconName, string]> = [
   ['/', 'home', 'Home'],
@@ -34,7 +35,7 @@ export function Navigation({ profile, onSignOut }: { profile: Profile; onSignOut
     <header className="navigation" ref={navigationRef}>
       <div className="navigation-bar">
         <NavLink to="/" className="brand-mark">
-          <span className="brand-bird"><Icon name="spark" size={16} /></span>
+          <span className="brand-bird"><BirdLogo size={22} /></span>
           <span>48Fans<span className="brand-muted">Wiki</span></span>
         </NavLink>
         <div className="navigation-search">

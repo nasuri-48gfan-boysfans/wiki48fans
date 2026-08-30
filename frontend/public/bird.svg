@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 110" role="img" aria-label="48FansWiki kawaii bird">
+  <defs>
+    <radialGradient id="bdy" cx="50%" cy="35%" r="80%">
+      <stop offset="0%" stop-color="#ffe89a"/>
+      <stop offset="100%" stop-color="#f4c95d"/>
+    </radialGradient>
+  </defs>
+
+  <!-- tail -->
+  <path d="M20 74 Q8 78 6 70 Q12 66 22 68 Z" fill="#e8a53c"/>
+  <path d="M24 80 Q10 88 6 80 Q12 76 20 78 Z" fill="#e6b94d"/>
+
+  <!-- body -->
+  <ellipse cx="62" cy="62" rx="48" ry="42" fill="url(#bdy)" stroke="#e6b94d" stroke-width="3"/>
+
+  <!-- belly -->
+  <ellipse cx="66" cy="78" rx="26" ry="20" fill="#fff9e9" opacity="0.95"/>
+
+  <!-- far wing (behind body, counted for depth) -->
+  <g class="wing wing-back" transform="rotate(-14 44 54)">
+    <path d="M40 50 Q20 34 16 52 Q30 56 44 58 Z" fill="#e88755"/>
+  </g>
+
+  <!-- near wing (flaps) -->
+  <g class="wing wing-front" transform="rotate(8 92 50)">
+    <path d="M88 48 Q112 30 116 50 Q104 60 88 58 Z" fill="#e88755" stroke="#d96f43" stroke-width="2"/>
+  </g>
+
+  <!-- rosy cheek -->
+  <ellipse cx="86" cy="70" rx="8" ry="5.5" fill="#f6a8a0" opacity="0.8"/>
+
+  <!-- beak -->
+  <path d="M96 60 Q112 62 98 68 Q94 64 96 60 Z" fill="#ff9a5a" stroke="#ef8a44" stroke-width="1.5"/>
+
+  <!-- eye -->
+  <g class="eye">
+    <circle cx="80" cy="56" r="7.5" fill="#46372c"/>
+    <circle cx="82.5" cy="53.5" r="2.6" fill="#fff"/>
+    <circle cx="78" cy="58.5" r="1.2" fill="#fff" opacity="0.7"/>
+  </g>
+
+  <!-- head crest feather -->
+  <path d="M60 20 Q58 8 64 6 Q66 12 66 22 Z" fill="#f4c95d" stroke="#e6b94d" stroke-width="1.5"/>
+
+  <!-- flight blur trail (used only in page transition) -->
+  <g class="flight-trail" fill="#f4c95d" opacity="0">
+    <circle cx="-16" cy="0" r="7"/>
+    <circle cx="-34" cy="2" r="5"/>
+    <circle cx="-52" cy="4" r="3"/>
+  </g>
+</svg>

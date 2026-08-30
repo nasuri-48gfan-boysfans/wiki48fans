@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { BrowserRouter, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom'
-import { Mascot } from './components/Mascot'
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { BirdLogo, Mascot } from './components/Mascot'
 import { Navigation } from './components/Navigation'
 import { Avatar, Button, Window } from './components/ui'
 import { getSession, onAuthStateChange, resetPassword, signIn, signOut, signUp } from './lib/auth'
@@ -45,7 +45,7 @@ function AuthLayout({ mode }: { mode: 'login' | 'register' }) {
 
   const brand = (
     <div className="brand-mark">
-      <span className="brand-bird">✦</span>
+      <span className="brand-bird"><BirdLogo size={22} /></span>
       <span>48Fans<span className="brand-muted">Wiki</span></span>
     </div>
   )
@@ -178,10 +178,15 @@ function dayInfo(): { weekday: string; date: string; greeting: string } {
 
 function ProtectedLayout({ profile, onSignOut, onProfileUpdated }: { profile: Profile; onSignOut: () => void; onProfileUpdated: () => void }) {
   const today = dayInfo()
+  const location = useLocation()
   return (
     <div className="app-shell">
       <Navigation profile={profile} onSignOut={onSignOut} />
       <main className="content">
+        <div className="page-stage" key={location.pathname}>
+          <div className="flying-bird" aria-hidden="true">
+            <Mascot flying />
+          </div>
         <header className="topbar">
           <div>
             <span className="eyebrow">{today.weekday}, {today.date}</span>
@@ -207,6 +212,7 @@ function ProtectedLayout({ profile, onSignOut, onProfileUpdated }: { profile: Pr
           <Route path="/channels" element={<ChannelsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        </div>
       </main>
     </div>
   )

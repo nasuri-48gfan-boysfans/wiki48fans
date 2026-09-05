@@ -9,7 +9,9 @@ const envSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   MONGODB_URI: z.string().min(1),
   PORT: z.coerce.number().int().positive().default(8787),
-  CLIENT_ORIGIN: z.string().url().default('http://localhost:5173'),
+  // Strip trailing slashes: browsers send Origin without one, and cors@2.x
+  // reflects an exact-match header, so a stray "/" breaks CORS production-wide.
+  CLIENT_ORIGIN: z.string().url().default('http://localhost:5173').transform((origin) => origin.replace(/\/+$/, '')),
   LIVE_TRACKER_INTERVAL_MS: z.coerce.number().int().positive().default(60000),
   SHOWROOM_TRACKER_URL: z.string().url().optional(),
   IDN_TRACKER_URL: z.string().url().optional(),

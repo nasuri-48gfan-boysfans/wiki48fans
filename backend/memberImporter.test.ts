@@ -275,6 +275,26 @@ test('enrichOnly never NULLs out an existing showroom id when the source omits i
   assert.equal(enriched.idn_user_id, 'idn-uuid-1')
 })
 
+test('full re-import from a source without provider ids preserves authoritative room ids', async () => {
+  // Existing member already carries an authoritative official showroom id
+  // (as applied by applyShowroomRooms.ts). A full (non-enrichOnly) re-import
+  // from a thinner source (e.g. 48pedia, which never emits showroom ids)
+  // must not NULL out that id.
+  const existing = [record({ sourceIdentifier: 'FREYA_JAYAWARDANA', name: 'Freyanashifa Jayawardana', showroomRoomId: '318225', idnUserId: 'idn-uuid-1' })]
+  const { store, rows } = fakeStore(existing)
+  const adapter: SourceAdapter = {
+    groupSlug: 'jkt48',
+    async fetchList() {
+      return [record({ sourceIdentifier: 'FREYA_JAYAWARDANA', name: 'Freyanashifa Jayawardana' })]
+    },
+  }
+  const report = await importMembers(adapter, { store })
+  assert.equal(report.errors.length, 0)
+  const row = rows.find((entry) => entry.source_identifier === 'FREYA_JAYAWARDANA')!
+  assert.equal(row.showroom_room_id, '318225')
+  assert.equal(row.idn_user_id, 'idn-uuid-1')
+})
+
 test('normalize48pedia maps the MemberDetail schema and keeps provenance', () => {
   const member = normalize48pedia({
     code: 'FIONY_ALVERIA',

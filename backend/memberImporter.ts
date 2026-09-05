@@ -183,6 +183,11 @@ async function upsertRecord(
   if (!current) { report.errors.push(`read ${record.name}: not found`); return }
 
   const target = toMemberPayload(groupId, record)
+  // A source that doesn't carry a live-tracking provider id must never
+  // NULL it out: the authoritative ids (applyShowroomRooms.ts) and any
+  // existing idn id are preserved even on a full (non-enrichOnly) re-import.
+  if (!record.showroomRoomId) target.showroom_room_id = current.showroom_room_id ?? null
+  if (!record.idnUserId) target.idn_user_id = current.idn_user_id ?? null
   const changed: Record<string, unknown> = {}
   for (const key of Object.keys(target)) {
     // last_verified_at is refresh metadata, not content; it alone is not an update.
